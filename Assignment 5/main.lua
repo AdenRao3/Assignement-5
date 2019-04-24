@@ -55,20 +55,13 @@ physics.addBody( character, "dynamic", {
     } )
 -----------------------
 
--- Fruit collions and make the apples fall
-
-local function fruitCollision( self, event )
- 
-    if ( event.phase == "began" ) then
-        print( self.id .. ": collision began with " .. event.other.id )
-        apple.y = math.random (1, 320)
- 
-    elseif ( event.phase == "ended" ) then
-        print( self.id .. ": collision ended with " .. event.other.id )
-   		apple.y = math.random (1, 320)
-    end
-
-end
+-- Score counter image
+----------------------
+local scoreCounter = display.newImageRect( "assets/scoreindicator.png", 100, 75 )
+scoreCounter.x = 10
+scoreCounter.y = 280
+scoreCounter.id = "scoreCounter"
+----------------------
 
 -- Left and right arrows
 ------------------------
@@ -82,20 +75,6 @@ rightArrow.x = display.contentCenterX + 35
 rightArrow.y = display.contentHeight - 20
 rightArrow.id = "right arrow"
 -------------------------
-
--- Apple image
-------------------
-local apple = display.newImageRect("Assets/apple.png", 35, 35)
-apple.x = 160
-apple.y = 0 
-apple.id = "apple"
-physics.addBody( apple, "dynamic", { 
-    friction = 0.5, 
-    bounce = 0.3,
-    time = 100000,
-    } )
-
--------------------
 
 -- Functions for the left and right arrow to move the character
 -----------------------------------
@@ -155,12 +134,71 @@ instructions.y = display.contentCenterY
 instructions.id = "instruction text"
 ------------------------
 
+local function characterCollision( self, event )
+ 
+    if ( event.phase == "began" ) then
+        print( self.id .. ": collision began with " .. event.other.id )
+ 
+    elseif ( event.phase == "ended" ) then
+        print( self.id .. ": collision ended with " .. event.other.id )
+    end
+end
+
 -- Functions for instruction text and to make it so when the user clicks the start button the text goes away
 ----------------------
 
 function instructions:touch( event )
 	if ( event.phase == "ended" ) then
 		instructions:removeSelf()
+
+-- Apple image
+------------------
+
+local apple = display.newImageRect("Assets/apple.png", 35, 35)
+apple.x = 160
+apple.y = 0 
+apple.id = "apple"
+physics.addBody( apple, "dynamic", { 
+    friction = 0.5, 
+    bounce = 0.3,
+    } )
+apple.isFixedRotation = true
+
+-------------------
+
+
+local function appleCollision( character, event )
+ 
+    if ( event.phase == "began" ) then
+    	local ding = audio.loadSound("sounds/ding.mp3")
+		audio.play(ding)
+		apple:removeSelf()
+		local counterText = display.newText( "1", display.contentCenterX - 260, display.contentCenterY + 130, native.systemFont, 30 )
+		counterText:setFillColor( 0/255, 255/255, 255/255 )
+        print( character.id .. ": collision began with " .. event.other.id )
+    elseif ( event.phase == "ended" ) then
+        print( character.id .. ": collision ended with " .. event.other.id )
+    end
+end
+
+--local function appleCollision( theGround, event )
+-- 
+--    if ( event.phase == "began" ) then
+--		local Xs = display.newImageRect( "assets/allgreyxs.png", 550, 375 )
+--		Xs.x = display.contentCenterX
+--		Xs.y = display.contentCenterY - 19
+--		Xs.id = "xs"
+--        print( theGround.id .. ": collision began with " .. event.other.id )
+--    elseif ( event.phase == "ended" ) then
+--        print( theGround.id .. ": collision ended with " .. event.other.id )
+--    end
+--end
+
+apple:addEventListener( "collision", apple )
+apple.collision = appleCollision
+apple:addEventListener( "collision", apple )
+apple.collision = appleCollision
+
     end
 
     return true
