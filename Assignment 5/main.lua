@@ -12,6 +12,11 @@
 display.setStatusBar(display.HiddenStatusBar)
 --------------------
 
+-- Score and lives variables
+----------------
+local score = 0
+local lives = 3
+----------------
 
 -- Physics
 ---------------------
@@ -63,7 +68,15 @@ scoreCounter.y = 280
 scoreCounter.id = "scoreCounter"
 ----------------------
 
--- Left and right arrows
+--Score counter text in the bottom left
+scoreText = display.newText( "Score: " .. score, display.contentCenterX - 230, display.contentCenterY + 131, native.systemFont, 22 )
+scoreText:setFillColor( 0 )
+
+-- Lives text in the bottom right
+livesText = display.newText( "Lives: " .. lives, display.contentCenterX + 230, display.contentCenterY + 142.5, native.systemFont, 22 )
+livesText:setFillColor( 0 )
+
+-- Left and right arrows for controlling the character but just the images
 ------------------------
 local leftArrow = display.newImageRect( "./assets/leftArrow.png", 25, 35 )
 leftArrow.x = display.contentCenterX - 50
@@ -76,7 +89,7 @@ rightArrow.y = display.contentHeight - 20
 rightArrow.id = "right arrow"
 -------------------------
 
--- Functions for the left and right arrow to move the character
+-- Functions for the left and right arrow that give the images the ability to move the character
 -----------------------------------
 function leftArrow:touch( event )
     if ( event.phase == "ended" ) then
@@ -105,7 +118,7 @@ function rightArrow:touch( event )
 end
 ---------------------------------------
 
--- Right and left wall
+-- Right and left wall to stop the character from falling of the map
 --------------------
 
 -- Left wall
@@ -126,7 +139,7 @@ physics.addBody( rightWall, "static", {
 
 --------------------
 
--- Instruction image(text)
+-- Instruction image(text), the text that tells the user how to play the game
 -----------------------
 local instructions = display.newImageRect("assets/instructions.png", 550, 300)
 instructions.x = display.contentCenterX
@@ -134,68 +147,52 @@ instructions.y = display.contentCenterY
 instructions.id = "instruction text"
 ------------------------
 
-local function characterCollision( self, event )
- 
-    if ( event.phase == "began" ) then
-        print( self.id .. ": collision began with " .. event.other.id )
- 
-    elseif ( event.phase == "ended" ) then
-        print( self.id .. ": collision ended with " .. event.other.id )
-    end
-end
-
--- Functions for instruction text and to make it so when the user clicks the start button the text goes away
-----------------------
-
+-- The fucntion that makes the instruction text go away when the user click the start button
 function instructions:touch( event )
-	if ( event.phase == "ended" ) then
-		instructions:removeSelf()
+    if ( event.phase == "ended" ) then
+        instructions:removeSelf()
 
--- Apple image
+-- Apple image that is in a while loop to keep on dropping apples until the lives is 0 and it also drops them at random places from the top.
 ------------------
-
-local apple = display.newImageRect("Assets/apple.png", 35, 35)
-apple.x = 160
-apple.y = 0 
-apple.id = "apple"
-physics.addBody( apple, "dynamic", { 
-    friction = 0.5, 
-    bounce = 0.3,
-    } )
-apple.isFixedRotation = true
-
+while(lives > 0) do
+    local apple = display.newImageRect("Assets/apple.png", 35, 35)
+    apple.x = math.random (1, 300)
+    apple.y = 0
+    apple.id = "apple"
+    physics.addBody( apple, "dynamic", { 
+        friction = 0.5, 
+        bounce = 0.3,
+        } )
+    apple.isFixedRotation = true
+    timer.performWithDelay(3)
+end
 -------------------
 
+-- Fucntion for the collision detection of the apple
+local function appleCollision( self, event )
 
-local function appleCollision( character, event )
  
-    if ( event.phase == "began" ) then
-    	local ding = audio.loadSound("sounds/ding.mp3")
-		audio.play(ding)
-		apple:removeSelf()
-		local counterText = display.newText( "1", display.contentCenterX - 260, display.contentCenterY + 130, native.systemFont, 30 )
-		counterText:setFillColor( 0/255, 255/255, 255/255 )
-        print( character.id .. ": collision began with " .. event.other.id )
+    if ( event.phase == "began" ) then -- If statement for determing what sprite the apple hit
+
+        if event.other.id == "character" then -- Id statement for the apple hitting the character
+            local ding = audio.loadSound("sounds/ding.mp3")
+            audio.play(ding)
+            apple:removeSelf()
+            score = score + 1
+            scoreText.text = ("Score: ".. score)
+            print( character.id .. ": collision began with " .. event.other.id )
+        end
     elseif ( event.phase == "ended" ) then
+        lives = lives - 1
+        livesText.text = ("Lives: ".. lives) 
+        local gameOverSound = audio.loadSound("sounds/gameover.mp3")
+        audio.play(gameOverSound)
+        apple:removeSelf()
         print( character.id .. ": collision ended with " .. event.other.id )
     end
 end
 
---local function appleCollision( theGround, event )
--- 
---    if ( event.phase == "began" ) then
---		local Xs = display.newImageRect( "assets/allgreyxs.png", 550, 375 )
---		Xs.x = display.contentCenterX
---		Xs.y = display.contentCenterY - 19
---		Xs.id = "xs"
---        print( theGround.id .. ": collision began with " .. event.other.id )
---    elseif ( event.phase == "ended" ) then
---        print( theGround.id .. ": collision ended with " .. event.other.id )
---    end
---end
-
-apple:addEventListener( "collision", apple )
-apple.collision = appleCollision
+-- Event listeners for the apple collision
 apple:addEventListener( "collision", apple )
 apple.collision = appleCollision
 
@@ -205,6 +202,7 @@ apple.collision = appleCollision
 end
 ----------------------
 
+-- Event listeners for the left and right arrows and the instructions (touch events) and there is also a collision event listener for the character
 leftArrow:addEventListener( "touch", leftArrow )
 rightArrow:addEventListener( "touch", rightArrow )
 instructions:addEventListener( "touch", instructions )
